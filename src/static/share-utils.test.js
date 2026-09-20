@@ -6,6 +6,7 @@ const {
   getNextSharedActivityQuery,
   getSharedActivityFromUrl,
   matchesSharedActivity,
+  prioritizeSharedActivity,
 } = require("./share-utils");
 
 test("getSharedActivityFromUrl returns a decoded activity name", () => {
@@ -34,4 +35,22 @@ test("getNextSharedActivityQuery clears the shared state after a manual search c
   assert.equal(getNextSharedActivityQuery("Chess Club", "Chess Club"), "Chess Club");
   assert.equal(getNextSharedActivityQuery("Chess Club", "Chess"), "");
   assert.equal(getNextSharedActivityQuery("Chess Club", ""), "");
+});
+
+test("prioritizeSharedActivity adds the shared activity without dropping other results", () => {
+  const filteredActivities = {
+    "Art Club": { description: "Art" },
+  };
+  const allActivities = {
+    "Chess Club": { description: "Chess" },
+    "Art Club": { description: "Art" },
+  };
+
+  assert.deepEqual(
+    prioritizeSharedActivity(filteredActivities, allActivities, "chess club"),
+    {
+      "Chess Club": { description: "Chess" },
+      "Art Club": { description: "Art" },
+    }
+  );
 });

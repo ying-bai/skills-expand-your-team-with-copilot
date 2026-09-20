@@ -36,12 +36,38 @@
       : "";
   }
 
+  function prioritizeSharedActivity(
+    filteredActivities,
+    allActivities,
+    sharedActivityQuery
+  ) {
+    if (!sharedActivityQuery) {
+      return filteredActivities;
+    }
+
+    const sharedEntry = Object.entries(allActivities).find(([activityName]) =>
+      matchesSharedActivity(activityName, sharedActivityQuery)
+    );
+
+    if (!sharedEntry) {
+      return filteredActivities;
+    }
+
+    const [sharedActivityName, sharedActivityDetails] = sharedEntry;
+
+    return {
+      [sharedActivityName]: sharedActivityDetails,
+      ...filteredActivities,
+    };
+  }
+
   const shareUtils = {
     normalizeActivityName,
     getSharedActivityFromUrl,
     buildActivityShareUrl,
     getNextSharedActivityQuery,
     matchesSharedActivity,
+    prioritizeSharedActivity,
   };
 
   if (typeof module !== "undefined" && module.exports) {

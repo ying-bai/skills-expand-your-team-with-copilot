@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
     getSharedActivityFromUrl,
     matchesSharedActivity,
     normalizeActivityName,
+    prioritizeSharedActivity,
   } = window.shareUtils;
 
   // DOM elements
@@ -508,16 +509,6 @@ document.addEventListener("DOMContentLoaded", () => {
     Object.entries(allActivities).forEach(([name, details]) => {
       const activityType = getActivityType(name, details.description);
       const normalizedName = normalizeActivityName(name);
-      const isSharedActivityMatch =
-        activeSharedActivity && matchesSharedActivity(name, activeSharedActivity);
-
-      if (activeSharedActivity) {
-        if (isSharedActivityMatch) {
-          filteredActivities[name] = details;
-        }
-
-        return;
-      }
 
       // Apply category filter
       if (currentFilter !== "all" && activityType !== currentFilter) {
@@ -544,6 +535,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ].join(" ");
 
       if (
+        !activeSharedActivity &&
         searchQuery &&
         !searchableContent.includes(searchQuery.toLowerCase())
       ) {
@@ -553,6 +545,12 @@ document.addEventListener("DOMContentLoaded", () => {
       // Activity passed all filters, add to filtered list
       filteredActivities[name] = details;
     });
+
+    filteredActivities = prioritizeSharedActivity(
+      filteredActivities,
+      allActivities,
+      activeSharedActivity
+    );
 
     // Check if there are any results
     if (Object.keys(filteredActivities).length === 0) {
