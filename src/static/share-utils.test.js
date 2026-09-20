@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 
 const {
   buildActivityShareUrl,
+  getNextSharedActivityQuery,
   getSharedActivityFromUrl,
   matchesSharedActivity,
 } = require("./share-utils");
@@ -27,4 +28,10 @@ test("buildActivityShareUrl preserves the current route state", () => {
 test("matchesSharedActivity compares normalized activity names", () => {
   assert.equal(matchesSharedActivity("Chess Club", " chess club "), true);
   assert.equal(matchesSharedActivity("Chess Club", "Drama Club"), false);
+});
+
+test("getNextSharedActivityQuery clears the shared state after a manual search change", () => {
+  assert.equal(getNextSharedActivityQuery("Chess Club", "Chess Club"), "Chess Club");
+  assert.equal(getNextSharedActivityQuery("Chess Club", "Chess"), "");
+  assert.equal(getNextSharedActivityQuery("Chess Club", ""), "");
 });

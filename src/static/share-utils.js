@@ -26,10 +26,21 @@
     );
   }
 
+  function getNextSharedActivityQuery(currentSharedActivity, nextSearchQuery) {
+    if (!currentSharedActivity || !nextSearchQuery) {
+      return "";
+    }
+
+    return matchesSharedActivity(currentSharedActivity, nextSearchQuery)
+      ? currentSharedActivity
+      : "";
+  }
+
   const shareUtils = {
     normalizeActivityName,
     getSharedActivityFromUrl,
     buildActivityShareUrl,
+    getNextSharedActivityQuery,
     matchesSharedActivity,
   };
 

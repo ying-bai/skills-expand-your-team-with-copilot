@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const {
     buildActivityShareUrl,
+    getNextSharedActivityQuery,
     getSharedActivityFromUrl,
     matchesSharedActivity,
     normalizeActivityName,
@@ -507,6 +508,16 @@ document.addEventListener("DOMContentLoaded", () => {
     Object.entries(allActivities).forEach(([name, details]) => {
       const activityType = getActivityType(name, details.description);
       const normalizedName = normalizeActivityName(name);
+      const isSharedActivityMatch =
+        activeSharedActivity && matchesSharedActivity(name, activeSharedActivity);
+
+      if (activeSharedActivity) {
+        if (isSharedActivityMatch) {
+          filteredActivities[name] = details;
+        }
+
+        return;
+      }
 
       // Apply category filter
       if (currentFilter !== "all" && activityType !== currentFilter) {
@@ -532,12 +543,7 @@ document.addEventListener("DOMContentLoaded", () => {
         formatSchedule(details).toLowerCase(),
       ].join(" ");
 
-      if (activeSharedActivity && !matchesSharedActivity(name, activeSharedActivity)) {
-        return;
-      }
-
       if (
-        !activeSharedActivity &&
         searchQuery &&
         !searchableContent.includes(searchQuery.toLowerCase())
       ) {
@@ -735,15 +741,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Event listeners for search and filter
   searchInput.addEventListener("input", (event) => {
-    activeSharedActivity = "";
     searchQuery = event.target.value;
+    activeSharedActivity = getNextSharedActivityQuery(
+      activeSharedActivity,
+      searchQuery
+    );
     displayFilteredActivities();
   });
 
   searchButton.addEventListener("click", (event) => {
     event.preventDefault();
-    activeSharedActivity = "";
     searchQuery = searchInput.value;
+    activeSharedActivity = getNextSharedActivityQuery(
+      activeSharedActivity,
+      searchQuery
+    );
     displayFilteredActivities();
   });
 
