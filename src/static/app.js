@@ -1,4 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const {
+    buildActivityShareUrl,
+    getSharedActivityFromUrl,
+    matchesSharedActivity,
+    normalizeActivityName,
+  } = window.shareUtils;
+
   // DOM elements
   const activitiesList = document.getElementById("activities-list");
   const messageDiv = document.getElementById("message");
@@ -40,8 +47,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let searchQuery = "";
   let currentDay = "";
   let currentTimeRange = "";
-  const sharedActivityQuery = getSharedActivityFromUrl();
-  let activeSharedActivity = normalizeActivityName(sharedActivityQuery);
+  const sharedActivityQuery = getSharedActivityFromUrl(window.location.href);
+  let activeSharedActivity = sharedActivityQuery;
   let hasScrolledToSharedActivity = false;
 
   // Authentication state
@@ -54,23 +61,11 @@ document.addEventListener("DOMContentLoaded", () => {
     weekend: { days: ["Saturday", "Sunday"] }, // Weekend days
   };
 
-  function getSharedActivityFromUrl() {
-    const activity = new URLSearchParams(window.location.search).get("activity");
-    return activity ? activity.trim() : "";
-  }
-
-  function normalizeActivityName(activityName) {
-    return activityName.trim().toLowerCase();
-  }
-
   function buildActivityShareDetails(activityName, details) {
-    const shareUrl = new URL(window.location.pathname, window.location.origin);
-    shareUrl.searchParams.set("activity", activityName);
-
     return {
       title: `Check out ${activityName}`,
       text: `Check out ${activityName} at Mergington High School. ${details.description} Schedule: ${formatSchedule(details)}.`,
-      url: shareUrl.toString(),
+      url: buildActivityShareUrl(window.location.href, activityName),
     };
   }
 
@@ -537,7 +532,7 @@ document.addEventListener("DOMContentLoaded", () => {
         formatSchedule(details).toLowerCase(),
       ].join(" ");
 
-      if (activeSharedActivity && normalizedName !== activeSharedActivity) {
+      if (activeSharedActivity && !matchesSharedActivity(name, activeSharedActivity)) {
         return;
       }
 
@@ -572,8 +567,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (activeSharedActivity) {
       const sharedCard = Array.from(
         activitiesList.querySelectorAll(".activity-card")
-      ).find(
-        (card) => normalizeActivityName(card.dataset.activityName) === activeSharedActivity
+      ).find((card) =>
+        matchesSharedActivity(card.dataset.activityName, activeSharedActivity)
       );
 
       if (sharedCard && !hasScrolledToSharedActivity) {
@@ -589,7 +584,7 @@ document.addEventListener("DOMContentLoaded", () => {
     activityCard.className = "activity-card";
     activityCard.dataset.activityName = name;
 
-    if (activeSharedActivity && normalizeActivityName(name) === activeSharedActivity) {
+    if (activeSharedActivity && matchesSharedActivity(name, activeSharedActivity)) {
       activityCard.classList.add("shared-activity-card");
     }
 
