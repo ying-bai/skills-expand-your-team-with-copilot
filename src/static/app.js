@@ -40,6 +40,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let searchQuery = "";
   let currentDay = "";
   let currentTimeRange = "";
+  const sharedActivityName = getSharedActivityFromUrl();
+  let hasScrolledToSharedActivity = false;
 
   // Authentication state
   let currentUser = null;
@@ -50,6 +52,91 @@ document.addEventListener("DOMContentLoaded", () => {
     afternoon: { start: "15:00", end: "18:00" }, // After school hours
     weekend: { days: ["Saturday", "Sunday"] }, // Weekend days
   };
+
+  function getSharedActivityFromUrl() {
+    const activity = new URLSearchParams(window.location.search).get("activity");
+    return activity ? activity.trim() : "";
+  }
+
+  function buildActivityShareDetails(activityName, details) {
+    const shareUrl = new URL(window.location.pathname, window.location.origin);
+    shareUrl.searchParams.set("activity", activityName);
+
+    return {
+      title: `Check out ${activityName}`,
+      text: `Check out ${activityName} at Mergington High School. ${details.description} Schedule: ${formatSchedule(details)}.`,
+      url: shareUrl.toString(),
+    };
+  }
+
+  async function copyTextToClipboard(text) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const temporaryInput = document.createElement("textarea");
+    temporaryInput.value = text;
+    temporaryInput.setAttribute("readonly", "");
+    temporaryInput.style.position = "absolute";
+    temporaryInput.style.left = "-9999px";
+    document.body.appendChild(temporaryInput);
+    temporaryInput.select();
+
+    const wasCopied = document.execCommand("copy");
+    document.body.removeChild(temporaryInput);
+
+    if (!wasCopied) {
+      throw new Error("Copy command was unsuccessful");
+    }
+  }
+
+  async function copyActivityShareLink(activityName, details) {
+    const shareDetails = buildActivityShareDetails(activityName, details);
+    const shareText = `${shareDetails.text}\n\n${shareDetails.url}`;
+
+    try {
+      await copyTextToClipboard(shareText);
+      showMessage(`Share details for ${activityName} copied.`, "success");
+    } catch (error) {
+      console.error("Error copying share link:", error);
+      showMessage("Unable to copy the share link right now.", "error");
+    }
+  }
+
+  async function shareActivity(activityName, details) {
+    const shareDetails = buildActivityShareDetails(activityName, details);
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareDetails);
+        return;
+      } catch (error) {
+        if (error.name === "AbortError") {
+          return;
+        }
+      }
+    }
+
+    await copyActivityShareLink(activityName, details);
+  }
+
+  function emailActivity(activityName, details) {
+    const shareDetails = buildActivityShareDetails(activityName, details);
+    const body = encodeURIComponent(`${shareDetails.text}\n\n${shareDetails.url}`);
+    const subject = encodeURIComponent(shareDetails.title);
+
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  }
+
+  function initializeSharedActivity() {
+    if (!sharedActivityName) {
+      return;
+    }
+
+    searchQuery = sharedActivityName;
+    searchInput.value = sharedActivityName;
+  }
 
   // Initialize filters from active elements
   function initializeFilters() {
@@ -470,12 +557,28 @@ document.addEventListener("DOMContentLoaded", () => {
     Object.entries(filteredActivities).forEach(([name, details]) => {
       renderActivityCard(name, details);
     });
+
+    if (sharedActivityName) {
+      const sharedCard = Array.from(
+        activitiesList.querySelectorAll(".activity-card")
+      ).find((card) => card.dataset.activityName === sharedActivityName);
+
+      if (sharedCard && !hasScrolledToSharedActivity) {
+        sharedCard.scrollIntoView({ behavior: "smooth", block: "center" });
+        hasScrolledToSharedActivity = true;
+      }
+    }
   }
 
   // Function to render a single activity card
   function renderActivityCard(name, details) {
     const activityCard = document.createElement("div");
     activityCard.className = "activity-card";
+    activityCard.dataset.activityName = name;
+
+    if (name === sharedActivityName) {
+      activityCard.classList.add("shared-activity-card");
+    }
 
     // Calculate spots and capacity
     const totalSpots = details.max_participants;
@@ -519,6 +622,20 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `;
 
+    const shareButtons = `
+      <div class="share-actions" aria-label="Share ${name}">
+        <button type="button" class="share-button" data-share-action="share">
+          Share
+        </button>
+        <button type="button" class="share-button share-button-secondary" data-share-action="copy">
+          Copy Link
+        </button>
+        <button type="button" class="share-button share-button-secondary" data-share-action="email">
+          Email
+        </button>
+      </div>
+    `;
+
     activityCard.innerHTML = `
       ${tagHtml}
       <h4>${name}</h4>
@@ -553,6 +670,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </ul>
       </div>
       <div class="activity-card-actions">
+        ${shareButtons}
         ${
           currentUser
             ? `
@@ -575,6 +693,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const deleteButtons = activityCard.querySelectorAll(".delete-participant");
     deleteButtons.forEach((button) => {
       button.addEventListener("click", handleUnregister);
+    });
+
+    const shareButtonsList = activityCard.querySelectorAll("[data-share-action]");
+    shareButtonsList.forEach((button) => {
+      button.addEventListener("click", async () => {
+        if (button.dataset.shareAction === "share") {
+          await shareActivity(name, details);
+          return;
+        }
+
+        if (button.dataset.shareAction === "copy") {
+          await copyActivityShareLink(name, details);
+          return;
+        }
+
+        emailActivity(name, details);
+      });
     });
 
     // Add click handler for register button (only when authenticated)
@@ -864,5 +999,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initialize app
   checkAuthentication();
   initializeFilters();
+  initializeSharedActivity();
   fetchActivities();
 });

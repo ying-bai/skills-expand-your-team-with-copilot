@@ -187,7 +187,44 @@ section h3 {
   margin-top: auto;
   padding-top: 10px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.shared-activity-card {
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 3px rgba(83, 75, 174, 0.15);
+}
+
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.share-button {
+  flex: 1 1 calc(33.33% - 6px);
+  min-width: 90px;
+  background-color: var(--primary-light);
+  color: var(--primary-text);
+  font-size: 0.75rem;
+  padding: 6px 10px;
+}
+
+.share-button:hover {
+  background-color: var(--primary);
+}
+
+.share-button-secondary {
+  background-color: var(--background);
+  color: var(--primary);
+  border: 1px solid var(--border);
+}
+
+.share-button-secondary:hover {
+  background-color: var(--border-light);
 }
 
 /* Activity Tag */
