@@ -40,8 +40,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let searchQuery = "";
   let currentDay = "";
   let currentTimeRange = "";
-  const sharedActivityName = getSharedActivityFromUrl();
-  let activeSharedActivity = sharedActivityName;
+  const sharedActivityQuery = getSharedActivityFromUrl();
+  let activeSharedActivity = normalizeActivityName(sharedActivityQuery);
   let hasScrolledToSharedActivity = false;
 
   // Authentication state
@@ -57,6 +57,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function getSharedActivityFromUrl() {
     const activity = new URLSearchParams(window.location.search).get("activity");
     return activity ? activity.trim() : "";
+  }
+
+  function normalizeActivityName(activityName) {
+    return activityName.trim().toLowerCase();
   }
 
   function buildActivityShareDetails(activityName, details) {
@@ -131,12 +135,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function initializeSharedActivity() {
-    if (!sharedActivityName) {
+    if (!sharedActivityQuery) {
       return;
     }
 
-    searchQuery = sharedActivityName;
-    searchInput.value = sharedActivityName;
+    searchQuery = sharedActivityQuery;
+    searchInput.value = sharedActivityQuery;
   }
 
   // Initialize filters from active elements
@@ -525,7 +529,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      if (activeSharedActivity && name !== activeSharedActivity) {
+      if (
+        activeSharedActivity &&
+        normalizeActivityName(name) !== activeSharedActivity
+      ) {
         return;
       }
 
@@ -563,10 +570,12 @@ document.addEventListener("DOMContentLoaded", () => {
       renderActivityCard(name, details);
     });
 
-    if (sharedActivityName) {
+    if (activeSharedActivity) {
       const sharedCard = Array.from(
         activitiesList.querySelectorAll(".activity-card")
-      ).find((card) => card.dataset.activityName === sharedActivityName);
+      ).find(
+        (card) => normalizeActivityName(card.dataset.activityName) === activeSharedActivity
+      );
 
       if (sharedCard && !hasScrolledToSharedActivity) {
         sharedCard.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -581,7 +590,7 @@ document.addEventListener("DOMContentLoaded", () => {
     activityCard.className = "activity-card";
     activityCard.dataset.activityName = name;
 
-    if (name === sharedActivityName) {
+    if (activeSharedActivity && normalizeActivityName(name) === activeSharedActivity) {
       activityCard.classList.add("shared-activity-card");
     }
 
@@ -628,7 +637,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     const shareButtons = `
-      <div class="share-actions" role="group" aria-label="Share ${name}">
+      <div class="share-actions" role="group" aria-label="Share activity">
         <button type="button" class="share-button" data-share-action="share">
           Share
         </button>
