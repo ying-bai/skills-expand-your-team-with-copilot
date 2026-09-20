@@ -511,6 +511,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     Object.entries(allActivities).forEach(([name, details]) => {
       const activityType = getActivityType(name, details.description);
+      const normalizedName = normalizeActivityName(name);
 
       // Apply category filter
       if (currentFilter !== "all" && activityType !== currentFilter) {
@@ -529,21 +530,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      if (
-        activeSharedActivity &&
-        normalizeActivityName(name) !== activeSharedActivity
-      ) {
-        return;
-      }
-
       // Apply search filter
       const searchableContent = [
-        name.toLowerCase(),
+        normalizedName,
         details.description.toLowerCase(),
         formatSchedule(details).toLowerCase(),
       ].join(" ");
 
+      if (activeSharedActivity && normalizedName !== activeSharedActivity) {
+        return;
+      }
+
       if (
+        !activeSharedActivity &&
         searchQuery &&
         !searchableContent.includes(searchQuery.toLowerCase())
       ) {
