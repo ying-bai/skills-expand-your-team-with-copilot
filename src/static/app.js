@@ -41,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentDay = "";
   let currentTimeRange = "";
   const sharedActivityName = getSharedActivityFromUrl();
+  let activeSharedActivity = sharedActivityName;
   let hasScrolledToSharedActivity = false;
 
   // Authentication state
@@ -524,6 +525,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
+      if (activeSharedActivity && name !== activeSharedActivity) {
+        return;
+      }
+
       // Apply search filter
       const searchableContent = [
         name.toLowerCase(),
@@ -623,7 +628,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     const shareButtons = `
-      <div class="share-actions" aria-label="Share ${name}">
+      <div class="share-actions" role="group" aria-label="Share ${name}">
         <button type="button" class="share-button" data-share-action="share">
           Share
         </button>
@@ -727,12 +732,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Event listeners for search and filter
   searchInput.addEventListener("input", (event) => {
+    activeSharedActivity = "";
     searchQuery = event.target.value;
     displayFilteredActivities();
   });
 
   searchButton.addEventListener("click", (event) => {
     event.preventDefault();
+    activeSharedActivity = "";
     searchQuery = searchInput.value;
     displayFilteredActivities();
   });
